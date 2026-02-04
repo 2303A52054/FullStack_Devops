@@ -1,6 +1,5 @@
-<<<<<<< HEAD
 # Dependencies
-node_modules/
+/node_modules
 /.pnp
 .pnp.js
 
@@ -20,10 +19,3 @@ node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-=======
-node_modules/
-.env
-.DS_Store
-*.log
-.vscode/
->>>>>>> 0c840b640ad59a3dd293eec16e415b45e5825f36

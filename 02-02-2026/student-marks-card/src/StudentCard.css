@@ -1,0 +1,123 @@
+.student-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  margin: 15px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  max-width: 400px;
+}
+
+.student-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  border-bottom: 2px solid #4CAF50;
+  padding-bottom: 15px;
+  margin-bottom: 20px;
+}
+
+.card-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 24px;
+}
+
+.roll-number {
+  margin: 5px 0 0 0;
+  color: #7f8c8d;
+  font-size: 14px;
+}
+
+.card-body h3 {
+  color: #34495e;
+  font-size: 18px;
+  margin-bottom: 15px;
+}
+
+.marks-table {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.mark-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.mark-row:last-child {
+  border-bottom: none;
+}
+
+.subject {
+  font-weight: 600;
+  color: #555;
+}
+
+.mark {
+  color: #2c3e50;
+  font-weight: bold;
+}
+
+.summary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border-radius: 8px;
+  padding: 15px;
+}
+
+.summary-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+}
+
+.summary-item .label {
+  font-weight: 500;
+}
+
+.summary-item .value {
+  font-weight: bold;
+  font-size: 18px;
+}
+
+.grade-Aplus {
+  color: #00ff00;
+  font-size: 24px !important;
+}
+
+.grade-A {
+  color: #7fff00;
+  font-size: 24px !important;
+}
+
+.grade-Bplus {
+  color: #ffff00;
+  font-size: 24px !important;
+}
+
+.grade-B {
+  color: #ffd700;
+  font-size: 24px !important;
+}
+
+.grade-C {
+  color: #ffa500;
+  font-size: 24px !important;
+}
+
+.grade-D {
+  color: #ff6347;
+  font-size: 24px !important;
+}
+
+.grade-F {
+  color: #ff0000;
+  font-size: 24px !important;
+}
