@@ -1,0 +1,12 @@
+{
+  "name": "dashboard",
+  "version": "1.0.0",
+  "description": "Personal Finance Tracker - Dashboard Module",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest --coverage --coverageReporters=text --coverageReporters=lcov"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

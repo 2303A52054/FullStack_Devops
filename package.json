@@ -1,0 +1,17 @@
+{
+  "name": "personal-finance-tracker",
+  "version": "1.0.0",
+  "description": "A modular Personal Finance Tracker with Dashboard, Expenses, and Income modules",
+  "main": "app.js",
+  "scripts": {
+    "install:all": "cd dashboard && npm install && cd ../expenses && npm install && cd ../income && npm install",
+    "test:dashboard": "cd dashboard && npm test",
+    "test:expenses": "cd expenses && npm test",
+    "test:income": "cd income && npm test",
+    "test:all": "npm run test:dashboard && npm run test:expenses && npm run test:income",
+    "build": "node app.js"
+  },
+  "keywords": ["finance", "tracker", "dashboard", "expenses", "income"],
+  "author": "Finance Tracker Team",
+  "license": "MIT"
+}

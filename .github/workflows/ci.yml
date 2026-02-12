@@ -1,0 +1,190 @@
+# .github/workflows/ci.yml
+# CI Pipeline for Personal Finance Tracker
+# Runs parallel tests for Dashboard, Expenses, and Income modules
+# Build job runs ONLY after all test jobs pass (Bonus Challenge ✅)
+
+name: Finance Tracker CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+# ─────────────────────────────────────────────────────────────────────────────
+# JOBS
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+
+  # ── JOB 1: Test Dashboard Module ─────────────────────────────────────────
+  test-dashboard:
+    name: "Test Dashboard (Node ${{ matrix.node-version }})"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]   # Matrix strategy ✅
+      fail-fast: false                        # Continue other versions if one fails
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: dashboard/package.json
+
+      - name: Install Dashboard dependencies
+        working-directory: ./dashboard
+        run: npm install
+
+      - name: Run Dashboard tests
+        working-directory: ./dashboard
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: dashboard-results.xml
+
+      - name: Upload Dashboard test results          # Store artifacts ✅
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dashboard-test-results-node${{ matrix.node-version }}
+          path: |
+            dashboard/test-results/
+            dashboard/coverage/
+          retention-days: 30
+
+  # ── JOB 2: Test Expenses Module ──────────────────────────────────────────
+  test-expenses:
+    name: "Test Expenses (Node ${{ matrix.node-version }})"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]   # Matrix strategy ✅
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: expenses/package.json
+
+      - name: Install Expenses dependencies
+        working-directory: ./expenses
+        run: npm install
+
+      - name: Run Expenses tests
+        working-directory: ./expenses
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: expenses-results.xml
+
+      - name: Upload Expenses test results            # Store artifacts ✅
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: expenses-test-results-node${{ matrix.node-version }}
+          path: |
+            expenses/test-results/
+            expenses/coverage/
+          retention-days: 30
+
+  # ── JOB 3: Test Income Module ────────────────────────────────────────────
+  test-income:
+    name: "Test Income (Node ${{ matrix.node-version }})"
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]   # Matrix strategy ✅
+      fail-fast: false
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: 'npm'
+          cache-dependency-path: income/package.json
+
+      - name: Install Income dependencies
+        working-directory: ./income
+        run: npm install
+
+      - name: Run Income tests
+        working-directory: ./income
+        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        env:
+          JEST_JUNIT_OUTPUT_DIR: ./test-results
+          JEST_JUNIT_OUTPUT_NAME: income-results.xml
+
+      - name: Upload Income test results              # Store artifacts ✅
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: income-test-results-node${{ matrix.node-version }}
+          path: |
+            income/test-results/
+            income/coverage/
+          retention-days: 30
+
+  # ── FINAL JOB: Build (runs ONLY if all tests pass) ───────────────────────
+  # Bonus Challenge: needs all 3 test jobs ✅
+  build:
+    name: "Build Complete Application"
+    runs-on: ubuntu-latest
+
+    needs: [test-dashboard, test-expenses, test-income]   # ✅ Bonus Challenge
+    if: success()                                          # ✅ Runs only after ALL tests pass
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js (LTS)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+
+      - name: Install all module dependencies
+        run: |
+          echo "Installing Dashboard dependencies..."
+          cd dashboard && npm install && cd ..
+          echo "Installing Expenses dependencies..."
+          cd expenses && npm install && cd ..
+          echo "Installing Income dependencies..."
+          cd income && npm install && cd ..
+
+      - name: Build and verify application
+        run: node app.js
+
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-test-results/
+
+      - name: Upload final build artifacts             # Store build artifacts ✅
+        uses: actions/upload-artifact@v4
+        with:
+          name: finance-tracker-build
+          path: |
+            app.js
+            dashboard/index.js
+            expenses/index.js
+            income/index.js
+            all-test-results/
+          retention-days: 90
