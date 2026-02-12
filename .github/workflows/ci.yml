@@ -43,7 +43,7 @@ jobs:
 
       - name: Run Dashboard tests
         working-directory: ./dashboard
-        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        run: npm test -- --ci 
         env:
           JEST_JUNIT_OUTPUT_DIR: ./test-results
           JEST_JUNIT_OUTPUT_NAME: dashboard-results.xml
@@ -85,7 +85,7 @@ jobs:
 
       - name: Run Expenses tests
         working-directory: ./expenses
-        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        run: npm test -- --ci 
         env:
           JEST_JUNIT_OUTPUT_DIR: ./test-results
           JEST_JUNIT_OUTPUT_NAME: expenses-results.xml
@@ -127,7 +127,7 @@ jobs:
 
       - name: Run Income tests
         working-directory: ./income
-        run: npm test -- --ci --reporters=default --reporters=jest-junit
+        run: npm test -- --ci 
         env:
           JEST_JUNIT_OUTPUT_DIR: ./test-results
           JEST_JUNIT_OUTPUT_NAME: income-results.xml
