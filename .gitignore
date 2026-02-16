@@ -1,0 +1,35 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output
+frontend/build/
+
+# Cypress
+frontend/cypress/screenshots/
+frontend/cypress/videos/
+frontend/cypress/results/
+
+# Logs
+*.log
+backend.log
+frontend.log
+*.pid
+
+# Environment
+.env
+.env.local
+.env.production
+
+# Coverage
+coverage/
+*/coverage/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp

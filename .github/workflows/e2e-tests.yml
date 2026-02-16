@@ -1,0 +1,285 @@
+name: E2E Integration Tests - Personal Finance Tracker
+
+on:
+  push:
+    branches: [main, develop, feature/**]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+env:
+  NODE_VERSION: '18'
+  BACKEND_PORT: 5000
+  FRONTEND_PORT: 3000
+  CI: true
+  REACT_APP_API_URL: http://localhost:5000
+
+jobs:
+  # ─────────────────────────────────────────────────────────────────
+  # Job 1: Backend Unit Tests
+  # ─────────────────────────────────────────────────────────────────
+  backend-tests:
+    name: Backend Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Run backend unit tests
+        working-directory: backend
+        run: npm test -- --coverage --forceExit
+
+      - name: Upload backend coverage report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────
+  # Job 2: Frontend Build
+  # ─────────────────────────────────────────────────────────────────
+  frontend-build:
+    name: Frontend Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Build frontend production bundle
+        working-directory: frontend
+        run: npm run build
+        env:
+          REACT_APP_API_URL: ${{ env.REACT_APP_API_URL }}
+
+      - name: Upload frontend build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-build
+          path: frontend/build/
+          retention-days: 7
+
+  # ─────────────────────────────────────────────────────────────────
+  # Job 3: E2E Integration Tests
+  # Flow: Start Backend → Start Frontend → Run E2E Tests → Report
+  # ─────────────────────────────────────────────────────────────────
+  e2e-tests:
+    name: E2E Integration Tests
+    runs-on: ubuntu-latest
+    needs: [backend-tests, frontend-build]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      # ── Step 1: Install all dependencies ──────────────────────────
+      - name: Install backend dependencies
+        working-directory: backend
+        run: npm ci
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # ── Step 2: Start Backend Server ─────────────────────────────
+      - name: Start backend server
+        working-directory: backend
+        run: |
+          nohup node server.js > ../backend.log 2>&1 &
+          echo "Backend PID: $!" > ../backend.pid
+        env:
+          PORT: ${{ env.BACKEND_PORT }}
+          NODE_ENV: test
+
+      - name: Wait for backend to be ready
+        run: |
+          echo "Waiting for backend on port ${{ env.BACKEND_PORT }}..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:${{ env.BACKEND_PORT }}/api/health > /dev/null 2>&1; then
+              echo "Backend is ready!"
+              break
+            fi
+            echo "Attempt $i: Backend not ready yet, waiting..."
+            sleep 2
+          done
+          # Final check
+          curl -sf http://localhost:${{ env.BACKEND_PORT }}/api/health || (echo "Backend failed to start!" && cat backend.log && exit 1)
+
+      - name: Verify backend health endpoint
+        run: |
+          RESPONSE=$(curl -s http://localhost:${{ env.BACKEND_PORT }}/api/health)
+          echo "Health response: $RESPONSE"
+          echo "$RESPONSE" | grep -q '"status":"ok"' || (echo "Backend health check failed!" && exit 1)
+
+      # ── Step 3: Start Frontend Dev Server ────────────────────────
+      - name: Start frontend development server
+        working-directory: frontend
+        run: |
+          REACT_APP_API_URL=http://localhost:${{ env.BACKEND_PORT }} \
+          nohup npm start > ../frontend.log 2>&1 &
+          echo "Frontend PID: $!" > ../frontend.pid
+        env:
+          PORT: ${{ env.FRONTEND_PORT }}
+          BROWSER: none
+          CI: false
+
+      - name: Wait for frontend to be ready
+        run: |
+          echo "Waiting for frontend on port ${{ env.FRONTEND_PORT }}..."
+          for i in $(seq 1 60); do
+            if curl -sf http://localhost:${{ env.FRONTEND_PORT }} > /dev/null 2>&1; then
+              echo "Frontend is ready!"
+              break
+            fi
+            echo "Attempt $i: Frontend not ready yet, waiting..."
+            sleep 3
+          done
+          # Final check
+          curl -sf http://localhost:${{ env.FRONTEND_PORT }} || (echo "Frontend failed to start!" && cat frontend.log && exit 1)
+
+      # ── Step 4: Run E2E Tests ─────────────────────────────────────
+      - name: Run Cypress E2E tests
+        working-directory: frontend
+        run: |
+          npx cypress run \
+            --headless \
+            --browser chrome \
+            --reporter json \
+            --reporter-options "output=cypress/results/results.json" \
+            --env API_URL=http://localhost:${{ env.BACKEND_PORT }}
+        env:
+          CYPRESS_BASE_URL: http://localhost:${{ env.FRONTEND_PORT }}
+          CYPRESS_API_URL: http://localhost:${{ env.BACKEND_PORT }}
+
+      # ── Step 5: Capture Results ───────────────────────────────────
+      - name: Upload Cypress screenshots (on failure)
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots-${{ github.run_number }}
+          path: frontend/cypress/screenshots/
+          retention-days: 14
+
+      - name: Upload Cypress videos
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-videos-${{ github.run_number }}
+          path: frontend/cypress/videos/
+          retention-days: 7
+
+      - name: Upload Cypress test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cypress-results-${{ github.run_number }}
+          path: frontend/cypress/results/
+          retention-days: 14
+
+      # ── Step 6: Upload Server Logs (on failure) ──────────────────
+      - name: Upload server logs on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: server-logs-${{ github.run_number }}
+          path: |
+            backend.log
+            frontend.log
+          retention-days: 7
+
+      # ── Step 7: Shut Down Services ────────────────────────────────
+      - name: Shutdown backend server
+        if: always()
+        run: |
+          if [ -f backend.pid ]; then
+            BACKEND_PID=$(cat backend.pid | grep "Backend PID:" | awk '{print $NF}')
+            if [ -n "$BACKEND_PID" ]; then
+              kill "$BACKEND_PID" 2>/dev/null || true
+              echo "Backend server (PID $BACKEND_PID) stopped."
+            fi
+          fi
+          pkill -f "node server.js" 2>/dev/null || true
+
+      - name: Shutdown frontend server
+        if: always()
+        run: |
+          if [ -f frontend.pid ]; then
+            FRONTEND_PID=$(cat frontend.pid | grep "Frontend PID:" | awk '{print $NF}')
+            if [ -n "$FRONTEND_PID" ]; then
+              kill "$FRONTEND_PID" 2>/dev/null || true
+              echo "Frontend server (PID $FRONTEND_PID) stopped."
+            fi
+          fi
+          pkill -f "react-scripts start" 2>/dev/null || true
+
+      - name: Generate test summary
+        if: always()
+        run: |
+          echo "## E2E Test Run Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Run Number:** ${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          if [ -f frontend/cypress/results/results.json ]; then
+            PASSED=$(cat frontend/cypress/results/results.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('stats',{}).get('passes',0))" 2>/dev/null || echo "N/A")
+            FAILED=$(cat frontend/cypress/results/results.json | python3 -c "import sys,json; d=json.load(sys.stdin); print(d.get('stats',{}).get('failures',0))" 2>/dev/null || echo "N/A")
+            echo "- **Tests Passed:** $PASSED" >> $GITHUB_STEP_SUMMARY
+            echo "- **Tests Failed:** $FAILED" >> $GITHUB_STEP_SUMMARY
+          fi
+
+  # ─────────────────────────────────────────────────────────────────
+  # Job 4: Integration Test Report
+  # ─────────────────────────────────────────────────────────────────
+  report:
+    name: Integration Test Report
+    runs-on: ubuntu-latest
+    needs: [e2e-tests]
+    if: always()
+
+    steps:
+      - name: Download all test artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts/
+
+      - name: List available artifacts
+        run: ls -la all-artifacts/ || echo "No artifacts found"
+
+      - name: Report final pipeline status
+        run: |
+          if [ "${{ needs.e2e-tests.result }}" == "success" ]; then
+            echo "✅ All E2E integration tests passed!"
+          else
+            echo "❌ E2E integration tests failed. Check screenshots and logs."
+            exit 1
+          fi
