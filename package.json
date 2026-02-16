@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "personal-finance-tracker",
   "version": "1.0.0",
   "description": "Personal Finance Tracker with E2E CI Integration Testing",
@@ -19,3 +20,63 @@
     "concurrently": "^8.2.2"
   }
 }
+=======
+<<<<<<< HEAD
+  "name": "online-shopping-website",
+  "version": "1.0.0",
+  "description": "Dynamic product display website with React components",
+  "main": "App.jsx",
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-scripts": "5.0.1"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}
+=======
+  "name": "event-management-system",
+  "version": "1.0.0",
+  "description": "Event Management System with MongoDB CRUD operations",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "keywords": ["event", "management", "mongodb", "crud"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mongoose": "^8.0.3",
+    "dotenv": "^16.3.1",
+    "cors": "^2.8.5",
+    "body-parser": "^1.20.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.2"
+  }
+}
+>>>>>>> 0c840b640ad59a3dd293eec16e415b45e5825f36
+>>>>>>> e51f10a3ffc4859eb32a1a80c44b080c2d57fdb0
