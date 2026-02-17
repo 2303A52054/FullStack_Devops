@@ -1,0 +1,26 @@
+{
+  "expense": {
+    "category": "Food",
+    "amount": 75.50,
+    "description": "Weekly groceries",
+    "date": "2024-02-15"
+  },
+  "income": {
+    "category": "Freelance",
+    "amount": 1200.00,
+    "description": "Web design project",
+    "date": "2024-02-14"
+  },
+  "largeExpense": {
+    "category": "Healthcare",
+    "amount": 350.00,
+    "description": "Doctor visit",
+    "date": "2024-02-13"
+  },
+  "bonusIncome": {
+    "category": "Bonus",
+    "amount": 500.00,
+    "description": "Performance bonus",
+    "date": "2024-02-12"
+  }
+}
